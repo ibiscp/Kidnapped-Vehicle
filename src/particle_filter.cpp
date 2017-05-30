@@ -113,8 +113,7 @@ std::vector<LandmarkObs> ParticleFilter::dataAssociation(std::vector<LandmarkObs
 	return associated_landmarks;
 }
 
-void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
-		std::vector<LandmarkObs> observations, Map map_landmarks) {
+void ParticleFilter::updateWeights(double sensor_range, double std_landmark[], std::vector<LandmarkObs> observations, Map map_landmarks) {
 	// TODO: Update the weights of each particle using a mult-variate Gaussian distribution. You can read
 	//   more about this distribution here: https://en.wikipedia.org/wiki/Multivariate_normal_distribution
 	// NOTE: The observations are given in the VEHICLE'S coordinate system. Your particles are located
@@ -126,7 +125,57 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 	//   3.33
 	//   http://planning.cs.uiuc.edu/node99.html
 
+	double std_x = std_landmark[0];
+	double std_y = std_landmark[1];
 
+    for(int i=0; i<particles.size(); ++i){
+
+        Particle p = particles[i];
+
+        // Transform from vehicle's coordinate system to map's coordinate system
+        std::vector<LandmarkObs> transformed_observations;
+        for(LandmarkObs observation: observations){
+
+            LandmarkObs transformed_observation;
+
+            transformed_observation.id = observation.id;
+            transformed_observation.x = p.x + observation.x * cos(p.theta) - observation.y * sin(p.theta);
+            transformed_observation.y = p.y + observation.x * sin(p.theta) + observation.y * cos(p.theta);
+
+            transformed_observations.push_back(transformed_observation);
+        }
+
+        // List of landmarks that are within sight of the particle
+        std::vector<LandmarkObs> landmarks_visible;
+        for(auto landmark: map_landmarks.landmark_list){
+
+            double distance = dist(p.x, p.y, landmark.x_f, landmark.y_f);
+
+            if(distance <= sensor_range){
+                LandmarkObs l;
+                l.id = landmark.id_i;
+                l.x = landmark.x_f;
+                l.y = landmark.y_f;
+
+                landmarks_visible.push_back(l);
+            }
+        }
+
+        // Associate nearest landmark to every observation of the particle
+        std::vector<LandmarkObs> associated_landmarks;
+        associated_landmarks = dataAssociation(landmarks_visible, transformed_observations);
+
+        double probability = 1;
+        for(int j=0; j<associated_landmarks; ++j){
+            double delta_x = transformed_observations[j].x - associated_landmarks[j].x;
+            double delta_y = transformed_observations[j].y - associated_landmarks[j].y;
+            probability *= 1.0/(2*M_PI*std_x*std_y) * exp(-(pow(delta_x,2)/(2*pow(std_x,2)) + pow(delta_y,2)/(2*pow(std_y,2))));
+        }
+
+        p.weight = probability;
+        weights[i] = probability;
+    }
+    return;
 }
 
 void ParticleFilter::resample() {
