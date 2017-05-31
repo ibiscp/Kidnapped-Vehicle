@@ -20,11 +20,13 @@
 using namespace std;
 
 void ParticleFilter::init(double x, double y, double theta, double std[]) {
-	// TODO: Set the number of particles. Initialize all particles to first position (based on estimates of
+	// Set the number of particles. Initialize all particles to first position (based on estimates of
 	//   x, y, theta and their uncertainties from GPS) and all weights to 1.
 	// Add random Gaussian noise to each particle.
 	// NOTE: Consult particle_filter.h for more information about this method (and others in this file).
-	num_particles = 1000;
+
+	// Define number of particles	
+	num_particles = 200;
 
 	weights.resize(num_particles, 1.0);
 
@@ -51,7 +53,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 }
 
 void ParticleFilter::prediction(double delta_t, double std_pos[], double velocity, double yaw_rate) {
-	// TODO: Add measurements to each particle and add random Gaussian noise.
+	// Add measurements to each particle and add random Gaussian noise.
 	// NOTE: When adding noise you may find std::normal_distribution and std::default_random_engine useful.
 	//  http://en.cppreference.com/w/cpp/numeric/random/normal_distribution
 	//  http://www.cplusplus.com/reference/random/default_random_engine/
@@ -130,7 +132,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[], s
 
     for(int i=0; i<particles.size(); ++i){
 
-        Particle p = particles[i];
+        Particle& p = particles[i];
 
         // Transform from vehicle's coordinate system to map's coordinate system
         vector<LandmarkObs> transformed_observations;
@@ -173,6 +175,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[], s
         }
 
         p.weight = probability;
+	// particles[i] = p;
         weights[i] = probability;
     }
     return;
