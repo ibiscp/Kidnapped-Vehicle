@@ -25,18 +25,20 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	// Add random Gaussian noise to each particle.
 	// NOTE: Consult particle_filter.h for more information about this method (and others in this file).
 
-	// Define number of particles	
-	num_particles = 200;
-
-	weights.resize(num_particles, 1.0);
-
-	default_random_engine gen;
+	// Distributions
+    default_random_engine gen;
 	normal_distribution<double> dist_x(x, std[0]);
 	normal_distribution<double> dist_y(y, std[1]);
 	normal_distribution<double> dist_theta(theta, std[2]);
 
-    for(int i=0; i<num_particles; ++i){
+	// Set the number of particles
+	num_particles = 200;
 
+	// Set all weights to 1
+	weights.resize(num_particles, 1.0);
+
+	// Initialize all particles to first position
+    for(int i=0; i<num_particles; ++i){
         Particle p;
         p.id = i;
         p.x = dist_x(gen);
@@ -58,13 +60,14 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 	//  http://en.cppreference.com/w/cpp/numeric/random/normal_distribution
 	//  http://www.cplusplus.com/reference/random/default_random_engine/
 
+	// Distributions
 	default_random_engine gen;
 	normal_distribution<double> dist_x(0, std_pos[0]);
 	normal_distribution<double> dist_y(0, std_pos[1]);
 	normal_distribution<double> dist_theta(0, std_pos[2]);
 
+	// Predict each particle position
 	for(int i=0; i<num_particles; ++i){
-
         Particle& p = particles[i];
 
         if (fabs(yaw_rate) < 0.001){
@@ -80,15 +83,13 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
         p.x += dist_x(gen);
         p.y += dist_y(gen);
         p.theta += dist_theta(gen);
-
 	}
 
     return;
 }
 
 std::vector<LandmarkObs> ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs>& observations) {
-	// TODO: Find the predicted measurement that is closest to each observed measurement and assign the
-	//   observed measurement to this particular landmark.
+	// Find the predicted measurement that is closest to each observed measurement and assign the observed measurement to this particular landmark.
 	// NOTE: this method will NOT be called by the grading code. But you will probably find it useful to
 	//   implement this method and use it as a helper during the updateWeights phase.
 
@@ -116,7 +117,7 @@ std::vector<LandmarkObs> ParticleFilter::dataAssociation(std::vector<LandmarkObs
 }
 
 void ParticleFilter::updateWeights(double sensor_range, double std_landmark[], std::vector<LandmarkObs> observations, Map map_landmarks) {
-	// TODO: Update the weights of each particle using a mult-variate Gaussian distribution. You can read
+	// Update the weights of each particle using a mult-variate Gaussian distribution. You can read
 	//   more about this distribution here: https://en.wikipedia.org/wiki/Multivariate_normal_distribution
 	// NOTE: The observations are given in the VEHICLE'S coordinate system. Your particles are located
 	//   according to the MAP'S coordinate system. You will need to transform between the two systems.
@@ -139,7 +140,6 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[], s
         for(LandmarkObs observation: observations){
 
             LandmarkObs transformed_observation;
-
             transformed_observation.id = observation.id;
             transformed_observation.x = p.x + observation.x * cos(p.theta) - observation.y * sin(p.theta);
             transformed_observation.y = p.y + observation.x * sin(p.theta) + observation.y * cos(p.theta);
@@ -167,6 +167,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[], s
         vector<LandmarkObs> associated_landmarks;
         associated_landmarks = dataAssociation(landmarks_visible, transformed_observations);
 
+        // Update weights of each particle
         double probability = 1;
         for(int j=0; j<associated_landmarks.size(); ++j){
             double delta_x = transformed_observations[j].x - associated_landmarks[j].x;
@@ -175,7 +176,6 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[], s
         }
 
         p.weight = probability;
-	// particles[i] = p;
         weights[i] = probability;
     }
     return;
@@ -190,18 +190,14 @@ void ParticleFilter::resample() {
 	default_random_engine gen(13);
 	discrete_distribution<int> d(weights.begin(), weights.end());
 
+	// Resample
 	vector<Particle> new_particles(num_particles);
-
+    vector<double> weights;
 	for (int i = 0; i < num_particles; i++) {
 		new_particles[i] = particles[d(gen)];
+		weights.push_back(new_particles[i].weight);
 	}
-
 	particles.swap(new_particles);
-
-	vector<double> weights;
-	for(Particle p:particles){
-        weights.push_back(p.weight);
-	}
 
 	/*
 	// Get max weight
