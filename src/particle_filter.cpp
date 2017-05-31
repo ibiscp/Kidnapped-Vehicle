@@ -35,7 +35,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 
     for(int i=0; i<num_particles; ++i){
 
-        Particle p = new Particle();
+        Particle p;
         p.id = i;
         p.x = dist_x(gen);
         p.y = dist_y(gen);
@@ -70,7 +70,7 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
             p.y += velocity * delta_t * sin(p.theta);
         }
         else{
-            p.x += velocity / yaw_rate * (sin(p.theta + yaw_rate * delta_t) - sin(p.theta)));
+            p.x += velocity / yaw_rate * (sin(p.theta + yaw_rate * delta_t) - sin(p.theta));
             p.y += velocity / yaw_rate * (cos(p.theta) - cos(p.theta + yaw_rate * delta_t));
             p.theta += yaw_rate * delta_t;
         }
@@ -166,7 +166,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[], s
         associated_landmarks = dataAssociation(landmarks_visible, transformed_observations);
 
         double probability = 1;
-        for(int j=0; j<associated_landmarks; ++j){
+        for(int j=0; j<associated_landmarks.size(); ++j){
             double delta_x = transformed_observations[j].x - associated_landmarks[j].x;
             double delta_y = transformed_observations[j].y - associated_landmarks[j].y;
             probability *= 1.0/(2*M_PI*std_x*std_y) * exp(-(pow(delta_x,2)/(2*pow(std_x,2)) + pow(delta_y,2)/(2*pow(std_y,2))));
@@ -187,12 +187,12 @@ void ParticleFilter::resample() {
 	double max_weight = 0;
 	for(Particle p:particles){
         if(p.weight > max_weight)
-            max_weight = p.weight
+            max_weight = p.weight;
 	}
 
 	// Generate new particles
 	std::vector<Particle> new_particles(num_particles);
-	default_random_engine gen();
+	default_random_engine gen;
 	std::uniform_int_distribution<int> start(0, num_particles - 1);
 	std::uniform_real_distribution<double> spin(0, 2.0 * max_weight);
 
@@ -203,7 +203,7 @@ void ParticleFilter::resample() {
         beta +=  spin(gen);
 
         while(particles[index].weight < beta){
-            beta -= particles[index].weight
+            beta -= particles[index].weight;
             index = (index + 1) % num_particles;
         }
         new_particles.push_back(particles[index]);
