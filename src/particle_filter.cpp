@@ -90,7 +90,7 @@ std::vector<LandmarkObs> ParticleFilter::dataAssociation(std::vector<LandmarkObs
 	// NOTE: this method will NOT be called by the grading code. But you will probably find it useful to
 	//   implement this method and use it as a helper during the updateWeights phase.
 
-	std::vector<LandmarkObs> associated_landmarks;
+	vector<LandmarkObs> associated_landmarks;
 	LandmarkObs closest;
 
 	for(int i=0; i<observations.size(); ++i){
@@ -133,7 +133,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[], s
         Particle p = particles[i];
 
         // Transform from vehicle's coordinate system to map's coordinate system
-        std::vector<LandmarkObs> transformed_observations;
+        vector<LandmarkObs> transformed_observations;
         for(LandmarkObs observation: observations){
 
             LandmarkObs transformed_observation;
@@ -146,7 +146,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[], s
         }
 
         // List of landmarks that are within sight of the particle
-        std::vector<LandmarkObs> landmarks_visible;
+        vector<LandmarkObs> landmarks_visible;
         for(auto landmark: map_landmarks.landmark_list){
 
             double distance = dist(p.x, p.y, landmark.x_f, landmark.y_f);
@@ -162,7 +162,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[], s
         }
 
         // Associate nearest landmark to every observation of the particle
-        std::vector<LandmarkObs> associated_landmarks;
+        vector<LandmarkObs> associated_landmarks;
         associated_landmarks = dataAssociation(landmarks_visible, transformed_observations);
 
         double probability = 1;
@@ -183,6 +183,19 @@ void ParticleFilter::resample() {
 	// NOTE: You may find std::discrete_distribution helpful here.
 	//   http://en.cppreference.com/w/cpp/numeric/random/discrete_distribution
 
+    // discrete_distribution does normalization of weights to transform weights into probability.
+	default_random_engine gen(13);
+	discrete_distribution<int> d(weights.begin(), weights.end());
+
+	vector<Particle> new_particles(num_particles);
+
+	for (int i = 0; i < num_particles; i++) {
+		new_particles[i] = particles[d(gen)];
+	}
+
+	particles.swap(new_particles);
+
+	/*
 	// Get max weight
 	double max_weight = 0;
 	for(Particle p:particles){
@@ -191,10 +204,10 @@ void ParticleFilter::resample() {
 	}
 
 	// Generate new particles
-	std::vector<Particle> new_particles(num_particles);
+	vector<Particle> new_particles(num_particles);
 	default_random_engine gen;
-	std::uniform_int_distribution<int> start(0, num_particles - 1);
-	std::uniform_real_distribution<double> spin(0, 2.0 * max_weight);
+	uniform_int_distribution<int> start(0, num_particles - 1);
+	uniform_real_distribution<double> spin(0, 2.0 * max_weight);
 
 	float beta = 0.0;
 	int index = start(gen);
@@ -210,6 +223,7 @@ void ParticleFilter::resample() {
 	}
 
 	particles = new_particles;
+	*/
 }
 
 Particle ParticleFilter::SetAssociations(Particle particle, std::vector<int> associations, std::vector<double> sense_x, std::vector<double> sense_y)
