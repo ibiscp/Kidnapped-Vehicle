@@ -195,6 +195,11 @@ void ParticleFilter::resample() {
 
 	particles.swap(new_particles);
 
+	vector<double> weights;
+	for(Particle p:particles){
+        weights.push_back(p.weight);
+	}
+
 	/*
 	// Get max weight
 	double max_weight = 0;
